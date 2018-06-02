@@ -15,6 +15,9 @@
 
       .chart {
         border: 1px solid black;
+      }
+
+      .chart.x-scroll {
         overflow-x: auto;
         width: 800px;
       }
@@ -23,10 +26,15 @@
   <body>
     <main>
       <h1>MTA station elevator outages</h1>
+      <section id="station-map">
+        <h2>Outages by system</h2>
+        <p>There were elevator outages across the city.</p>
+        <div class="chart"></div>
+      </section>
       <section id="el107">
         <h2>WTF is up with EL107 (@ 181 St)?</h2>
         <p>EL107 had the most outages (43) over the time period.</p>
-        <div class="chart"></div>
+        <div class="chart x-scroll"></div>
       </section>
       <section>
         <h2>Data sources</h2>
@@ -37,73 +45,103 @@
     </main>
 
     <script src="https://unpkg.com/d3"></script>
-    <script src=""></script>
     <script>
       const chartHeight = 400
       const chartMargin = 40
-      const chartWidth = 2500
-      function el107Chart() {
-        d3.csv('./data/joined.csv').then(data => {
-          const elevator = data.filter(d => d.mta_id === 'EL107')
-          const dates = elevator.map(d => ([
-            new Date(d.estimated_return),
-            new Date(d.first_missed),
-            new Date(d.out_of_service),
-          ])).reduce((accum, next) => (accum.concat(next)), [])
-          const rectHeight = Math.ceil((chartHeight - (chartMargin * 2)) / elevator.length)
-          const timeScale = d3.scaleTime()
-            .domain(d3.extent(dates))
-            .range([0, chartWidth])
-          const xAxis = d3.axisBottom()
-            .scale(timeScale)
-            .ticks(10)
-          const yScale = d3.scaleLinear()
-            .domain([0, elevator.length])
-            .range([0, chartHeight - (2 * chartMargin)])
+      function stationOutagesMap(data) {
+        const chartWidth = 800
+        const svg = d3.select('#station-map .chart')
+          .append('svg')
+            .attr('height', chartHeight)
+            .attr('width', chartWidth)
 
-          const svg = d3.select('#el107 .chart')
-            .append('svg')
-              .attr('height', chartHeight)
-              .attr('width', chartWidth)
+        const dates = data.map(d => d.out_of_service)
+        const extent = d3.extent(dates)
+        const daysBetween = Math.round((extent[1]-extent[0])/(1000*60*60*24))
+        window.dd = dates
+        const timeScale = d3.scaleTime()
+          .domain(d3.extent(dates))
+          .range([0, chartWidth])
 
-          svg.append('g')
-            .attr('transform', `translate(0, ${ chartHeight - chartMargin / 2})`)
-            .call(xAxis)
+        const xAxis = d3.axisBottom()
+          .scale(timeScale)
+          .ticks(10)
 
-          const gs = svg.selectAll('g').data(elevator)
-            .enter()
-              .append('g')
-                .attr('transform', (d, i) => {
-                  const start = new Date(d.out_of_service)
-                  const x = timeScale(start)
-                  const y = yScale(i) + chartMargin
-                  return `translate(${x}, ${y})`
-                })
+        svg.append('g')
+          .attr('transform', `translate(0, ${ chartHeight - chartMargin / 2})`)
+          .call(xAxis)
 
-          gs.append('rect')
-            .attr('fill', 'lightgray')
-            .attr('height', `${rectHeight}`)
-            .attr('width', d => {
-              const start = new Date(d.out_of_service)
-              const estimated = new Date(d.estimated_return)
-
-              return timeScale(estimated) - timeScale(start)
-            })
-
-          gs.append('rect')
-            .attr('fill', 'black')
-            .attr('height', `${rectHeight}`)
-            .attr('width', d => {
-              const start = new Date(d.out_of_service)
-              const end = new Date(d.first_missed)
-
-              return timeScale(end) - timeScale(start)
-            })
-
-        })
       }
 
-      el107Chart()
+      function el107Chart(elevator) {
+        const chartWidth = 2500
+        const dates = elevator.map(d => ([
+          d.estimated_return,
+          d.first_missed,
+          d.out_of_service,
+        ])).reduce((accum, next) => (accum.concat(next)), [])
+        const rectHeight = Math.ceil((chartHeight - (chartMargin * 2)) / elevator.length)
+        const timeScale = d3.scaleTime()
+          .domain(d3.extent(dates))
+          .range([0, chartWidth])
+        const xAxis = d3.axisBottom()
+          .scale(timeScale)
+          .ticks(10)
+        const yScale = d3.scaleLinear()
+          .domain([0, elevator.length])
+          .range([0, chartHeight - (2 * chartMargin)])
+
+        const svg = d3.select('#el107 .chart')
+          .append('svg')
+            .attr('height', chartHeight)
+            .attr('width', chartWidth)
+
+        svg.append('g')
+          .attr('transform', `translate(0, ${ chartHeight - chartMargin / 2})`)
+          .call(xAxis)
+
+        const gs = svg.selectAll('g').data(elevator)
+          .enter()
+            .append('g')
+              .attr('transform', (d, i) => {
+                const start = d.out_of_service
+                const x = timeScale(start)
+                const y = yScale(i) + chartMargin
+                return `translate(${x}, ${y})`
+              })
+
+        gs.append('rect')
+          .attr('fill', 'lightgray')
+          .attr('height', `${rectHeight}`)
+          .attr('width', d => {
+            const start = d.out_of_service
+            const estimated = d.estimated_return
+
+            return timeScale(estimated) - timeScale(start)
+          })
+
+        gs.append('rect')
+          .attr('fill', 'black')
+          .attr('height', `${rectHeight}`)
+          .attr('width', d => {
+            const start = d.out_of_service
+            const end = d.first_missed
+
+            return timeScale(end) - timeScale(start)
+          })
+      }
+
+      d3.csv('./data/joined.csv').then(raw => {
+        const data = raw.map(d => ({
+          ...d,
+          estimated_return: new Date(d.estimated_return),
+          first_missed: new Date(d.first_missed),
+          out_of_service: new Date(d.out_of_service)
+        }))
+
+        stationOutagesMap(data)
+        el107Chart(data.filter(d => d.mta_id === 'EL107'))
+      })
     </script>
   </body>
 </html>

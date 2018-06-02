@@ -16,6 +16,10 @@
     "d3": "^4.13.0",
     "fast-csv": "^2.4.1",
     "json2csv": "^4.0.2",
-    "live-server": "^1.2.0"
+    "live-server": "^1.2.0",
+    "lodash.range": "^3.2.0",
+    "lodash.sum": "^4.0.2",
+    "lodash.uniq": "^4.5.0",
+    "moment": "^2.22.2"
   }
 }

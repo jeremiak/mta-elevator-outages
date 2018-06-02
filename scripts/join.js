@@ -4,7 +4,7 @@ const path = require('path')
 const d3 = require('d3')
 const json2csv = require('json2csv').parse
 
-const dest = path.join(__dirname, '../data/joined.csv')
+const dest = path.join(__dirname, '../data/generated/joined.csv')
 const p = file => path.join(__dirname, '../data', file)
 const elevatorsFile = fs.readFileSync(p('elevators_elevator.csv'))
 const outageFile = fs.readFileSync(p('elevators_outage.csv'))
