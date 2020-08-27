@@ -4,7 +4,7 @@ some explorations of nyc mta elevator outage data
 
 ## data
 
-* `elevators_*.csv` are scraped from [mta nyc elevator and escalator status page](http://advisory.mtanyct.info/EEoutage/EEOutageReport.aspx?StationID=All) using
+* `elevators_*.csv` are scraped from [mta nyc elevator and escalator status page](http://advisory.mtanyct.info/EEoutage/EEOutageReport.aspx?StationID=All) using [this python-based scraper](https://gitlab.com/jeremiak/mta-elevator-status-scraper)
 
   `elevators.elevator.csv` headings:
     * `station` - The station name (`(ID: )` refers to an internal ID, not from the MTA)
